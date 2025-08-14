@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Data Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1e2328 50%, #0f1419 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #ff4655, #ffffff, #00d4ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #b8b8b8;
+            margin-bottom: 30px;
+        }
+
+        .file-status {
+            background: rgba(255, 70, 85, 0.1);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ff4655;
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 70, 85, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: #ff4655;
+            box-shadow: 0 10px 25px rgba(255, 70, 85, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ff4655;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            color: #b8b8b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 70, 85, 0.2);
+            border: 2px solid #ff4655;
+            color: #ffffff;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover, .btn.active {
+            background: #ff4655;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 70, 85, 0.4);
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 70, 85, 0.3);
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: #ffffff;
+            font-size: 1em;
+            width: 300px;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #ff4655;
+            box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .data-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(15px);
+            transition: all 0.3s ease;
+        }
+
+        .data-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 70, 85, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-category {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff4655, #ff6b78);
+            color: #ffffff;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        .card-info {
+            color: #b8b8b8;
+            line-height: 1.6;
+        }
+
+        .card-info div {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .card-info div:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #ff4655;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.3em;
+            color: #b8b8b8;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.3em;
+            color: #b8b8b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VALORANT DATA HUB</h1>
+            <p class="subtitle">ข้อมูลครบครันจาก Liquipedia.net</p>
+        </div>
+
+        <div class="debug-info" id="debugInfo" style="display: none;">
+            <div>Debug Information:</div>
+            <div id="debugContent"></div>
+        </div>
+
+        <div class="file-status" id="fileStatus">
+            <p>🔄 กำลังตรวจสอบไฟล์ข้อมูล...</p>
+        </div>
+
+        <div class="stats-overview" id="statsOverview">
+            <div class="stat-card">
+                <div class="stat-number" id="playersCount">0</div>
+                <div class="stat-label">Players</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="teamsCount">0</div>
+                <div class="stat-label">Teams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="agentsCount">0</div>
+                <div class="stat-label">Agents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="tournamentsCount">0</div>
+                <div class="stat-label">Tournaments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="mapsCount">0</div>
+                <div class="stat-label">Maps</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn active" onclick="filterData('all')">ทั้งหมด</button>
+            <button class="btn" onclick="filterData('Players')">Players</button>
+            <button class="btn" onclick="filterData('Teams')">Teams</button>
+            <button class="btn" onclick="filterData('Agents')">Agents</button>
+            <button class="btn" onclick="filterData('Tournaments')">Tournaments</button>
+            <button class="btn" onclick="filterData('Maps')">Maps</button>
+        </div>
+
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="ค้นหาข้อมูล..." id="searchInput" oninput="searchData()">
+            <button class="btn" onclick="toggleDebug()">Debug</button>
+        </div>
+
+        <div class="data-grid" id="dataGrid">
+            <div class="loading">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let currentFilter = 'all';
+        let debugMode = false;
+
+        // ข้อมูลตัวอย่าง
+        const sampleData = [
+            {
+                name: "TenZ",
+                category: "Players",
+                real_name: "Tyson Ngo",
+                current_team: "Sentinels",
+                role: "Duelist",
+                country: "Canada",
+                age: "23",
+                earnings: "$200,000+"
+            },
+            {
+                name: "Sentinels",
+                category: "Teams",
+                region: "North America",
+                founded: "2020",
+                coach: "Don",
+                captain: "ShahZaM",
+                current_players: "TenZ, SicK, dapr, ShahZaM, zombs"
+            },
+            {
+                name: "Jett",
+                category: "Agents",
+                role: "Duelist",
+                origin: "South Korea",
+                release_date: "2020-06-02",
+                abilities: "Cloudburst, Updraft, Tailwind, Blade Storm"
+            }
+        ];
+
+        function updateDebug(message) {
+            if (debugMode) {
+                const debugContent = document.getElementById('debugContent');
+                const timestamp = new Date().toLocaleTimeString();
+                debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            }
+            console.log(message);
+        }
+
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.style.display = debugMode ? 'block' : 'none';
+            if (debugMode) {
+                updateDebug('Debug mode activated');
+            }
+        }
+
+        function updateFileStatus(message, isError = false, isSuccess = false) {
+            const fileStatus = document.getElementById('fileStatus');
+            fileStatus.innerHTML = `<p>${message}</p>`;
+            
+            if (isSuccess) {
+                fileStatus.style.borderColor = 'rgba(0, 212, 255, 0.5)';
+                fileStatus.style.backgroundColor = 'rgba(0, 212, 255, 0.1)';
+                fileStatus.style.color = '#00d4ff';
+            } else if (isError) {
+                fileStatus.style.borderColor = 'rgba(255, 70, 85, 0.5)';
+                fileStatus.style.backgroundColor = 'rgba(255, 70, 85, 0.1)';
+                fileStatus.style.color = '#ff4655';
+            } else {
+                fileStatus.style.borderColor = 'rgba(255, 165, 0, 0.5)';
+                fileStatus.style.backgroundColor = 'rgba(255, 165, 0, 0.1)';
+                fileStatus.style.color = '#ffa500';
+            }
+        }
+
+        function parseCSV(csvText) {
+            updateDebug('Parsing CSV data...');
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim().replace(/"/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim().replace(/"/g, ''));
+                
+                if (values.length >= headers.length && values[1] && values[1].trim() !== '') {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = values[index] ? values[index].trim() : '';
+                    });
+                    data.push(obj);
+                }
+            }
+            
+            updateDebug(`Parsed ${data.length} records from CSV`);
+            return data;
+        }
+
+        async function loadData() {
+            updateDebug('Starting data load process...');
+            
+            try {
+                updateDebug('Attempting to load JSON file...');
+                updateFileStatus('🔄 กำลังโหลดไฟล์ JSON...');
+                
+                try {
+                    const response = await fetch('./valorant_detailed_data.json');
+                    updateDebug(`JSON fetch response status: ${response.status}`);
+                    
+                    if (response.ok) {
+                        const jsonData = await response.json();
+                        updateDebug(`JSON data loaded: ${jsonData.length} records`);
+                        
+                        if (jsonData && jsonData.length > 0) {
+                            allData = jsonData;
+                            updateFileStatus(`✅ โหลดข้อมูลจาก JSON สำเร็จ! (${jsonData.length} รายการ)`, false, true);
+                            return true;
+                        }
+                    }
+                } catch (jsonError) {
+                    updateDebug(`JSON load failed: ${jsonError.message}`);
+                }
+
+
+                updateDebug('Attempting to load CSV file...');
+                updateFileStatus('🔄 กำลังโหลดไฟล์ CSV...');
+                
+                try {
+                    const response = await fetch('./valorant_detailed_data.csv');
+                    updateDebug(`CSV fetch response status: ${response.status}`);
+                    
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        updateDebug(`CSV text length: ${csvText.length}`);
+                        
+                        if (csvText.trim()) {
+                            const csvData = parseCSV(csvText);
+                            if (csvData && csvData.length > 0) {
+                                allData = csvData;
+                                updateFileStatus(`✅ โหลดข้อมูลจาก CSV สำเร็จ! (${csvData.length} รายการ)`, false, true);
+                                return true;
+                            }
+                        }
+                    }
+                } catch (csvError) {
+                    updateDebug(`CSV load failed: ${csvError.message}`);
+                }
+
+
+                updateDebug('No data files found, using sample data');
+                allData = [...sampleData];
+                updateFileStatus('⚠️ ไม่พบไฟล์ข้อมูล ใช้ข้อมูลตัวอย่าง (กรุณารัน crawler และ refresh หน้า)', true);
+                return false;
+
+            } catch (error) {
+                updateDebug(`Error loading data: ${error.message}`);
+                allData = [...sampleData];
+                updateFileStatus('❌ เกิดข้อผิดพลาดในการโหลดข้อมูล ใช้ข้อมูลตัวอย่าง', true);
+                return false;
+            }
+        }
+
+        function updateStats() {
+            const stats = {
+                Players: 0,
+                Teams: 0,
+                Agents: 0,
+                Tournaments: 0,
+                Maps: 0
+            };
+
+            allData.forEach(item => {
+                if (stats.hasOwnProperty(item.category)) {
+                    stats[item.category]++;
+                }
+            });
+
+            updateDebug(`Stats: ${JSON.stringify(stats)}`);
+
+            Object.keys(stats).forEach(category => {
+                const element = document.getElementById(category.toLowerCase() + 'Count');
+                animateNumber(element, stats[category]);
+            });
+        }
+
+        function animateNumber(element, targetNumber) {
+            const duration = 1000;
+            const startNumber = 0;
+            const increment = targetNumber / (duration / 16);
+            let current = startNumber;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= targetNumber) {
+                    element.textContent = targetNumber;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+
+        function filterData(category) {
+            currentFilter = category;
+            
+            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (category === 'all') {
+                filteredData = [...allData];
+            } else {
+                filteredData = allData.filter(item => item.category === category);
+            }
+
+            renderData();
+        }
+
+        function searchData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let baseData = currentFilter === 'all' ? allData : allData.filter(item => item.category === currentFilter);
+            
+            if (searchTerm.trim() === '') {
+                filteredData = baseData;
+            } else {
+                filteredData = baseData.filter(item => 
+                    Object.values(item).some(value => 
+                        String(value).toLowerCase().includes(searchTerm)
+                    )
+                );
+            }
+
+            renderData();
+        }
+
+        function renderData() {
+            const grid = document.getElementById('dataGrid');
+            
+            if (filteredData.length === 0) {
+                grid.innerHTML = '<div class="no-data">ไม่พบข้อมูลที่ค้นหา</div>';
+                return;
+            }
+
+            grid.innerHTML = filteredData.map(item => {
+                const cardInfo = Object.entries(item)
+                    .filter(([key]) => key !== 'name' && key !== 'category')
+                    .map(([key, value]) => {
+                        if (value && value.toString().trim() !== '') {
+                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return `<div><span class="info-label">${label}:</span>${value}</div>`;
+                        }
+                        return '';
+                    })
+                    .filter(item => item !== '')
+                    .join('');
+
+                return `
+                    <div class="data-card">
+                        <div class="card-category">${item.category}</div>
+                        <div class="card-title">${item.name}</div>
+                        <div class="card-info">
+                            ${cardInfo || '<div>ไม่มีข้อมูลเพิ่มเติม</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateDebug('Page loaded, starting data load...');
+            await loadData();
+            filteredData = [...allData];
+            updateStats();
+            renderData();
+            updateDebug('Initialization complete');
+        });
+    </script>
+</body>
+</html>
